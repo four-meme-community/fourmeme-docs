@@ -254,7 +254,7 @@ event TokenCreate(
 
 Notes:
 
-1. Creation requires sufficient BNB balance. Latest documented creation fee reference: **0.01 BNB** (platform fees may change; treat API/`msg.value` requirements as source of truth at submit time).
+1. Creation requires sufficient BNB balance. Latest documented creation fee reference: **0.00 BNB** (platform fees may change; treat API/`msg.value` requirements as source of truth at submit time).
 2. Most technical launch parameters are platform-fixed.
 3. Display fields (name, symbol, description, image, links, label) are the main custom surface.
 4. `lpTradingFee` must remain `0.0025`.
