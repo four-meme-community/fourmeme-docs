@@ -211,6 +211,7 @@ Headers：
 |------|------|
 | `feeRate` | 創建 API 百分比選項：必須為 `1`、`3`、`5`、`10` 之一。後端在組裝 `createArg` 時轉為鏈上 TaxToken（type 5）的 **basis points**（例如 API `5` → 鏈上 `500`），稅金按 `amount * feeRate / 10000` 計算 |
 | `burnRate` / `divideRate` / `liquidityRate` / `recipientRate` | 自訂百分比；**總和必須為 100** |
+| `giggleCharityRate` / `binanceCharityRate` | TaxToken9 慈善分配百分比。任一可為 `0`；支援時須將兩者計入分配總和 |
 | `recipientAddress` | `recipientRate` 的收款地址；未使用時用 `""` 且 `recipientRate: 0` |
 | `minSharing` | 參與分紅的最低持倉（ether 單位）。形式 `d × 10ⁿ`，且 `n ≥ 5`、`1 ≤ d ≤ 9` |
 
@@ -218,7 +219,7 @@ Headers：
 
 `burnRate(20) + divideRate(30) + liquidityRate(40) + recipientRate(10) = 100`
 
-New TaxToken（token8）創建後的識別與買賣稅欄位，見 [稅收代幣接入](./tax-guide.md)。
+TaxToken8／TaxToken9 創建後的識別、買賣稅欄位與 TaxToken9 慈善限制，見[稅收代幣接入](./tax-guide.md)。
 
 ## 4. 鏈上提交
 

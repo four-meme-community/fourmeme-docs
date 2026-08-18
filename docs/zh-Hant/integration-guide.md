@@ -104,7 +104,7 @@ const info = await helper.getTokenInfo(token);
 | 是否經典版 Four.Meme？V1 還是 V2？ | Helper3 `getTokenInfo` |
 | 是否已遷移至 Pancake？ | `liquidityAdded` / `TradeStop` / `LiquidityAdded` |
 | 是否啟用 AntiSniperFeeMode？ | [交易指南](./trade-guide.md#6-antisniperfeemode-代幣) |
-| 是否 TaxToken / TaxToken8？ | [稅收代幣指南](./tax-guide.md) |
+| 是否 TaxToken / TaxToken8 / TaxToken9？ | 解碼 `creatorType = (template >> 10) & 0x3F`；見[稅收代幣指南](./tax-guide.md) |
 
 鏈下代幣元資料（可選）：
 

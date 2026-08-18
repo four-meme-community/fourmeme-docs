@@ -86,7 +86,7 @@ interface ITokenManagerHelper3 {
     /// @return quote Quote asset (`address(0)` = native BNB)
     /// @return funds Estimated net quote to the seller: `curveGross - protocolFee - token8SellTax`.
     /// Does not subtract third-party router `feeRate` cuts. Token8 tax is removed here but not included in `fee`.
-    /// @return fee Protocol trading fee only (not token8 tax, not router cut)
+    /// @return fee Protocol trading fee only (not TaxToken8 tax, not router cut)
     function trySell(address token, uint256 amount)
         external
         view

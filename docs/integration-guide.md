@@ -104,7 +104,7 @@ Given a token address, integrators commonly need to know:
 | Is it classic Four.Meme? V1 or V2? | Helper3 `getTokenInfo` |
 | Has it migrated to Pancake? | `liquidityAdded` / `TradeStop` / `LiquidityAdded` |
 | Is AntiSniperFeeMode enabled? | [Trade guide](./trade-guide.md#6-antisniperfeemode-tokens) |
-| Is it TaxToken / TaxToken8? | [Tax guide](./tax-guide.md) |
+| Is it TaxToken / TaxToken8 / TaxToken9? | Decode `creatorType = (template >> 10) & 0x3F`; see the [Tax guide](./tax-guide.md) |
 
 Off-chain token metadata (optional):
 

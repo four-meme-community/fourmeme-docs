@@ -11,7 +11,7 @@
 - [接入總覽](./integration-guide.md)：地址、V1/V2 路由、代幣識別、遷移後路由，以及各細節指南連結。
 - [交易接入](./trade-guide.md)：買賣、預估、Helper3、事件、錯誤碼、AntiSniper 識別。
 - [創建接入](./create-guide.md)：後端創建 API 流程與鏈上 `createToken` 提交。
-- [稅收代幣接入](./tax-guide.md)：TaxToken / TaxToken8 識別、領取與公開稅收狀態。
+- [稅收代幣接入](./tax-guide.md)：TaxToken / TaxToken8 / TaxToken9 識別、慈善分配、領取與公開稅收狀態。
 
 ## 合約與 ABI
 

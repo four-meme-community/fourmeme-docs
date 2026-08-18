@@ -96,7 +96,7 @@ Return usage:
 | `amountApproval` | Suggested ERC20 quote approval when `quote != 0` |
 | `amountFunds` | Suggested `funds` argument for AMAP buys |
 
-For TaxToken8, Helper also folds estimated buy tax into `amountMsgValue` / `amountApproval` where applicable.
+For TaxToken8 and TaxToken9, Helper also folds estimated buy tax into `amountMsgValue` / `amountApproval` where applicable.
 
 ### 2.3 `trySell`
 
@@ -113,8 +113,8 @@ function trySell(address token, uint256 amount) returns (
 |-------|---------|
 | `tokenManager` | Manager to call for the real trade |
 | `quote` | Quote asset (`address(0)` = native BNB) |
-| `funds` | Estimated **net** quote to the seller: `curveGross - protocolFee - token8SellTax`. Does **not** subtract any third-party router `feeRate` cut. Token8 tax is deducted here but **not** included in `fee` |
-| `fee` | Protocol trading fee only (not token8 tax, not router cut) |
+| `funds` | Estimated **net** quote to the seller: `curveGross - protocolFee - taxTokenSellTax`. Does **not** subtract any third-party router `feeRate` cut. Token8/TaxToken9 tax is deducted here but **not** included in `fee` |
+| `fee` | Protocol trading fee only (not TaxToken8/TaxToken9 tax, not router cut) |
 
 ### 2.4 `calcInitialPrice`
 
@@ -344,4 +344,4 @@ if (info.version === 2n) {
 
 ## 8. Tax Tokens While Trading
 
-TaxToken / TaxToken8 identification and claim flows are documented in the [Tax Integration](./tax-guide.md). Trading still goes through TokenManager2 / Helper3; tax accounting lives on the token contract after fees are taken.
+TaxToken / TaxToken8 / TaxToken9 identification and claim flows are documented in the [Tax Integration](./tax-guide.md). TaxToken9 uses the same curve-stage quote-side tax routing as TaxToken8. Trading still goes through TokenManager2 / Helper3; tax accounting lives on the token contract after fees are taken.

@@ -1,6 +1,6 @@
 # Four.Meme Classic 稅收代幣接入
 
-本指南涵蓋 TaxToken（creator type 5）與 New TaxToken / token8（creator type 8）：如何識別、讀取公開稅收狀態、領取持有人獎勵，以及監聽手續費事件。
+本指南涵蓋 TaxToken（creator type 5）、TaxToken8（creator type 8）與 TaxToken9（creator type 9）：如何識別、讀取公開稅收狀態、領取持有人獎勵，以及監聽手續費事件。
 
 另見：
 
@@ -10,8 +10,8 @@
 
 精簡產物：
 
-- ABI：[`../../abi/TaxToken.lite.json`](../../abi/TaxToken.lite.json)、[`../../abi/TaxToken8.lite.json`](../../abi/TaxToken8.lite.json)
-- 介面：[`../../contracts/interfaces/ITaxToken.sol`](../../contracts/interfaces/ITaxToken.sol)、[`../../contracts/interfaces/ITaxToken8.sol`](../../contracts/interfaces/ITaxToken8.sol)
+- ABI：[`../../abi/TaxToken.lite.json`](../../abi/TaxToken.lite.json)、[`../../abi/TaxToken8.lite.json`](../../abi/TaxToken8.lite.json)、[`../../abi/TaxToken9.lite.json`](../../abi/TaxToken9.lite.json)
+- 介面：[`../../contracts/interfaces/ITaxToken.sol`](../../contracts/interfaces/ITaxToken.sol)、[`../../contracts/interfaces/ITaxToken8.sol`](../../contracts/interfaces/ITaxToken8.sol)、[`../../contracts/interfaces/ITaxToken9.sol`](../../contracts/interfaces/ITaxToken9.sol)
 
 Bonding curve 交易仍走 TokenManager2 / Helper3。本指南只涵蓋 **代幣合約** 上的稅收／獎勵介面。
 
@@ -19,22 +19,23 @@ Bonding curve 交易仍走 TokenManager2 / Helper3。本指南只涵蓋 **代幣
 
 稅收代幣是具備以下特性的 ERC20：
 
-- 買賣轉帳稅（token8 在曲線交易階段也有稅）
-- 稅金分配給創始人／持有人／銷毀／流動性
+- 買賣轉帳稅（TaxToken8／TaxToken9 在曲線交易階段也有稅）
+- 稅金分配給創始人／持有人／銷毀／流動性；TaxToken9 另支援可選的 Giggle／Binance 慈善分配
 - 持有人以計價資產領取獎勵
 
-兩代：
+三種 creator type：
 
 | 種類 | Creator type | 說明 |
 |------|--------------|------|
 | TaxToken | `5` | 單一鏈上 `feeRate`，單位為 **basis points**（`/ 10000`） |
-| New TaxToken（token8） | `8` | 分開的 `feeRateBuy` / `feeRateSell`，單位為 **百分比**（`/ 100`）。曲線階段：由 TokenManager 在計價側扣稅；遷移後：在 pair 上對轉帳課稅 |
+| TaxToken8 | `8` | 分開的 `feeRateBuy` / `feeRateSell`，單位為 **百分比**（`/ 100`）。曲線階段：由 TokenManager 在計價側扣稅；遷移後：在 pair 上對轉帳課稅 |
+| TaxToken9 | `9` | 買賣稅與曲線稅模型同 TaxToken8，新增 `rateGiggleCharity`、`rateBinanceCharity`，並支付到 `charityHelper` 回傳的地址 |
 
-token8 已驗證源碼／ABI 範例（BscScan）：https://bscscan.com/token/0x77c4206fab7dc2e18501bf5bed3fb82d453effff#code
+TaxToken8 已驗證源碼／ABI 範例（BscScan）：https://bscscan.com/token/0x77c4206fab7dc2e18501bf5bed3fb82d453effff#code
 
 ## 2. 識別
 
-### 2.1 鏈上（兩代皆可）
+### 2.1 鏈上（權威判斷）
 
 ```solidity
 TokenInfo memory ti = ITokenManager2(tm2)._tokenInfos(token);
@@ -43,11 +44,15 @@ uint256 creatorType = (ti.template >> 10) & 0x3F;
 if (creatorType == 5) {
     // TaxToken
 } else if (creatorType == 8) {
-    // New TaxToken (token8)
+    // TaxToken8
+} else if (creatorType == 9) {
+    // TaxToken9
 }
 ```
 
 `ITokenManager2` / `_tokenInfos` 見 [`../../contracts/interfaces/ITokenManager2.sol`](../../contracts/interfaces/ITokenManager2.sol)。
+
+請以 `creatorType == 9` 作為 TaxToken9 的鏈上權威判斷。對鏈下 API 回應，則使用下述 TaxToken9 專屬慈善欄位識別。
 
 ### 2.2 鏈下
 
@@ -59,11 +64,14 @@ if (creatorType == 5) {
 | 訊號 | 含義 |
 |------|------|
 | 存在 `data.taxInfo` | 稅收類代幣（經典 TaxToken 家族） |
-| `data.version == "V9"` | New TaxToken（token8） |
-| `taxInfo.feeRate` | TaxToken（type 5）買賣稅的創建／API 百分比，或 token8 買入稅 |
-| `taxInfo.feeRateSell` | token8 賣出稅百分比 |
+| `data.version == "V9"` | 新版經典稅收代幣家族（TaxToken8／TaxToken9）；此值不是鏈上 creator type |
+| `taxInfo.version >= 1` | 目前 Four.Meme Web 前端會選用與 TaxToken9 相容的 ABI 讀取介面；這只是 ABI 選擇提示，不是 TaxToken9 的權威識別 |
+| `taxInfo.feeRate` / `taxInfo.feeRateSell` | TaxToken8／TaxToken9 的買入／賣出稅百分比 |
+| 存在 `taxInfo.rateGiggleCharity` 或 `taxInfo.rateBinanceCharity` 欄位 | 鏈下識別為 TaxToken9；判斷欄位是否存在，而不是數值是否大於 0 |
+| `taxInfo.rateGiggleCharity` | Giggle 慈善分配百分比；`0` 表示未啟用 |
+| `taxInfo.rateBinanceCharity` | Binance 慈善分配百分比；`0` 表示未啟用 |
 
-token8 負載範例：
+TaxToken8 負載範例：
 
 ```json
 {
@@ -88,6 +96,17 @@ token8 負載範例：
 ```
 
 經典 TaxToken 的 `taxInfo` 使用單一 `feeRate`（API 百分比選項 `1`/`3`/`5`/`10`）加上分配欄位（`burnRate`、`divideRate`、`liquidityRate`、`recipientRate`、`minSharing`、`recipientAddress`）。分配比例總和須為 100。鏈上 type-5 `feeRate` 以 basis points 儲存／套用（`amount * feeRate / 10000`）；`divideRate` 對應持有人分配（`rateHolder`）。
+
+鏈下 TaxToken9 識別：
+
+```typescript
+const taxInfo = data.taxInfo;
+const isToken9 =
+  taxInfo != null &&
+  ("rateGiggleCharity" in taxInfo || "rateBinanceCharity" in taxInfo);
+```
+
+即使兩個值都是 `0`，只要欄位存在仍識別為 TaxToken9。UI 僅在 `rateGiggleCharity > 0` 或 `rateBinanceCharity > 0` 時顯示慈善狀態。若合約身分會影響安全或交易建構，仍須鏈上驗證 `creatorType == 9`。
 
 ## 3. 轉帳模式
 
@@ -122,7 +141,7 @@ UI 常用的獎勵會計 getter：
 - `totalShares`、`feePerShare`、`feeAccumulated`、`feeDispatched`
 - `feeFounder`、`feeHolder`
 
-## 5. New TaxToken（token8）差異
+## 5. TaxToken8差異
 
 與 TaxToken 相同的領取／模式／分配介面，外加：
 
@@ -134,10 +153,43 @@ function feeRate() external view returns (uint256); // 已棄用的相容欄位
 
 - `feeRateBuy` / `feeRateSell` 為 **百分比**（`3` = 3%），遷移後在 pair 轉帳上按 `amount * rate / 100` 套用
 - 文件記載的鏈上上限為 `<= 10`
-- 曲線交易階段（遷移前），token8 稅由 TokenManager 在 **計價** 側收取（`curveGross * rate / 100`，經 `sendFee`），不是 ERC20 轉帳稅
+- 曲線交易階段（遷移前），TaxToken8 稅由 TokenManager 在 **計價** 側收取（`curveGross * rate / 100`，經 `sendFee`），不是 ERC20 轉帳稅
 - 請優先使用 `feeRateBuy` / `feeRateSell`，而非已棄用的 `feeRate`
 
-## 6. 領取
+## 6. TaxToken9 差異
+
+TaxToken9 保留 TaxToken8 的百分比買賣稅與曲線階段計價側扣稅，並新增兩個可選慈善分配：
+
+```solidity
+function charityHelper() external view returns (address);
+function rateGiggleCharity() external view returns (uint256);
+function rateBinanceCharity() external view returns (uint256);
+function feeGiggleCharity() external view returns (uint256);
+function feeBinanceCharity() external view returns (uint256);
+```
+
+分配比例必須符合：
+
+```text
+rateFounder
++ rateHolder
++ rateBurn
++ rateLiquidity
++ rateGiggleCharity
++ rateBinanceCharity
+= 100
+```
+
+- 任一慈善比例可為 `0`，也可兩者同時啟用。
+- 若慈善比例大於 `0`，`charityHelper` 必須非零，且須為該慈善項目回傳非零收款地址。
+- `charityHelper.charities()` 一次回傳 `(giggleCharity, binanceCharity)`。Helper owner 可更新地址，接入方不應硬編碼。
+- 慈善分配在派發時直接以計價資產支付。
+- `feeGiggleCharity`／`feeBinanceCharity` 是成功支付的累計值；轉帳失敗後的待支付值由 `feeToGiggleCharity`／`feeToBinanceCharity` 提供。
+- 其他公開會計欄位包括 `feeBurned`、`feeLiquidity`、`feeClaimed`、`tokenAccumulated`、`tokenBurned`。
+- TaxToken9 的 `userInfo(account)` 會在原本四個會計值之外，多回傳第五個 `exists` 布林值。
+- 當合約計價餘額低於帳戶計算出的可領值時，TaxToken9 會發出 `FeeInsufficient(account, claimable, balance)`，並支付現有餘額。
+
+## 7. 領取
 
 ### 讀取
 
@@ -218,7 +270,9 @@ for (let i = 0n; i < total; i += pageSize) {
 }
 ```
 
-## 7. 事件
+## 8. 事件
+
+TaxToken／TaxToken8：
 
 ```solidity
 event FeeDispatched(
@@ -233,15 +287,37 @@ event FeeDispatched(
 event FeeClaimed(address account, uint256 amount);
 ```
 
+TaxToken9：
+
+```solidity
+event FeeDispatched(
+    uint256 amountFounder,
+    uint256 amountHolder,
+    uint256 amountBurn,
+    uint256 amountLiquidity,
+    uint256 amountGiggleCharity,
+    uint256 amountBinanceCharity
+);
+
+event FeeClaimed(address account, uint256 amount);
+event FeeInsufficient(address account, uint256 claimable, uint256 balance);
+```
+
+TaxToken8 與 TaxToken9 的 `FeeDispatched` 事件簽名相同（`FeeDispatched(uint256,uint256,uint256,uint256,uint256,uint256)`），但最後兩個值的語意不同。索引前必須依鏈上 creator type 選擇 ABI／欄位解讀。
+
 索引器應在各稅收代幣地址上監聽這些事件（不是 TokenManager）。
 
-## 8. 使用範例
+## 9. 使用範例
 
 ```typescript
-const token = new Contract(tokenAddress, TaxToken8Abi, signer);
-
 const creatorType = /* 來自 TokenManager2._tokenInfos(token).template bits */;
-const abi = creatorType === 8n ? TaxToken8Abi : TaxTokenAbi;
+const abi =
+  creatorType === 9n
+    ? TaxToken9Abi
+    : creatorType === 8n
+      ? TaxToken8Abi
+      : TaxTokenAbi;
+const token = new Contract(tokenAddress, abi, signer);
 
 const claimable = await token.claimableFee(user);
 const claimed = await token.claimedFee(user);
@@ -259,14 +335,15 @@ const page = await token.users(0n, 50n, 0n);
 監聽派發：
 
 ```typescript
-token.on("FeeDispatched", (amountFounder, amountHolder, amountBurn, amountLiquidity, quoteFounder, quoteHolder) => {
+token.on("FeeDispatched", (...amounts) => {
+  // 依 creatorType（8 或 9）解讀最後兩個值。
   // 更新 UI / 索引器
 });
 ```
 
-## 9. 接入注意事項
+## 10. 接入注意事項
 
-1. `rateFounder + rateHolder + rateBurn + rateLiquidity == 100`。
+1. Type 5／8 要求 `rateFounder + rateHolder + rateBurn + rateLiquidity == 100`；TaxToken9 的總和還須包含兩個慈善比例。
 2. 黑名單地址即使 `claimableFee` 看起來為正也無法領取。
 3. 派發後因捨入，`feeAccumulated` 可能留下少量餘額。
 4. 創建時 `tokenTaxInfo` 規則見 [創建接入](./create-guide.md#34-tokentaxinfo)。

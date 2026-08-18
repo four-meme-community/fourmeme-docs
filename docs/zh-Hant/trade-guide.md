@@ -96,7 +96,7 @@ function tryBuy(address token, uint256 amount, uint256 funds) view returns (
 | `amountApproval` | 當 `quote != 0` 時建議的 ERC20 計價 approve 額度 |
 | `amountFunds` | AMAP 買入建議的 `funds` 參數 |
 
-對 TaxToken8，Helper 在適用時也會把預估買入稅折入 `amountMsgValue` / `amountApproval`。
+對 TaxToken8 與 TaxToken9，Helper 在適用時也會把預估買入稅折入 `amountMsgValue` / `amountApproval`。
 
 ### 2.3 `trySell`
 
@@ -113,8 +113,8 @@ function trySell(address token, uint256 amount) returns (
 |------|------|
 | `tokenManager` | 實際交易應呼叫的 manager |
 | `quote` | 計價資產（`address(0)` = 原生 BNB） |
-| `funds` | 預估賣方 **淨** 計價收入：`curveGross - protocolFee - token8SellTax`。**不**扣除第三方 router `feeRate` 抽成。Token8 稅在此扣除，但**不**計入 `fee` |
-| `fee` | 僅協議交易費（不含 token8 稅、不含 router 抽成） |
+| `funds` | 預估賣方 **淨** 計價收入：`curveGross - protocolFee - taxTokenSellTax`。**不**扣除第三方 router `feeRate` 抽成。Token8／TaxToken9 稅在此扣除，但**不**計入 `fee` |
+| `fee` | 僅協議交易費（不含 TaxToken8／TaxToken9 稅、不含 router 抽成） |
 
 ### 2.4 `calcInitialPrice`
 
@@ -344,4 +344,4 @@ if (info.version === 2n) {
 
 ## 8. 交易中的稅收代幣
 
-TaxToken / TaxToken8 的識別與領取流程見 [稅收代幣接入](./tax-guide.md)。交易仍走 TokenManager2 / Helper3；稅費入帳後，稅務會計在代幣合約上。
+TaxToken / TaxToken8 / TaxToken9 的識別與領取流程見[稅收代幣接入](./tax-guide.md)。TaxToken9 在曲線階段使用與 TaxToken8 相同的計價側扣稅路由。交易仍走 TokenManager2 / Helper3；稅費入帳後，稅務會計在代幣合約上。

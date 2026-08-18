@@ -11,7 +11,7 @@ These docs are for third-party integrators: wallets, trading UIs, DEX aggregator
 - [Integration Guide](./docs/integration-guide.md): overview — addresses, V1/V2 routing, token identification, migration routing, and links to detail guides.
 - [Trade Integration](./docs/trade-guide.md): buy/sell, estimates, Helper3, events, errors, AntiSniper identification.
 - [Create Integration](./docs/create-guide.md): backend create API flow and on-chain `createToken` submission.
-- [Tax Integration](./docs/tax-guide.md): TaxToken / TaxToken8 identification, claims, and public tax state.
+- [Tax Integration](./docs/tax-guide.md): TaxToken / TaxToken8 / TaxToken9 identification, charity allocation, claims, and public tax state.
 
 ## Contracts and ABI
 

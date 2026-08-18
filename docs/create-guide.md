@@ -211,6 +211,7 @@ Rates are percentages (for example `5` = 5%).
 |-------|-------|
 | `feeRate` | Create-API percentage option: must be one of `1`, `3`, `5`, `10`. Backend converts to on-chain TaxToken (type 5) **basis points** when building `createArg` (e.g. API `5` → on-chain `500`), then tax is applied as `amount * feeRate / 10000` |
 | `burnRate` / `divideRate` / `liquidityRate` / `recipientRate` | Custom percentages; **sum must equal 100** |
+| `giggleCharityRate` / `binanceCharityRate` | TaxToken9 charity allocation percentages. Either may be `0`; include both in the allocation sum when supported |
 | `recipientAddress` | Recipient for `recipientRate`; use `""` and `recipientRate: 0` if unused |
 | `minSharing` | Min holder balance (ether units) to join dividends. Form `d × 10ⁿ` with `n ≥ 5`, `1 ≤ d ≤ 9` |
 
@@ -218,7 +219,7 @@ Example constraint:
 
 `burnRate(20) + divideRate(30) + liquidityRate(40) + recipientRate(10) = 100`
 
-For New TaxToken (token8) identification and buy/sell tax fields after creation, see the [Tax Integration](./tax-guide.md).
+For TaxToken8/TaxToken9 identification, buy/sell tax fields, and TaxToken9 charity constraints after creation, see the [Tax Integration](./tax-guide.md).
 
 ## 4. On-chain Submission
 
